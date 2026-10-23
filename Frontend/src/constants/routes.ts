@@ -1,0 +1,41 @@
+export const ROUTES = {
+  LOGIN: "/login",
+  REGISTER: "/register",
+  FORGOT_PASSWORD: "/forgot-password",
+  VERIFY_OTP: "/verify-otp",
+  RESET_PASSWORD: "/reset-password",
+  DASHBOARD: "/dashboard",
+  PROFILE: "/profile",
+  CATEGORIES: "/categories",
+  CATEGORY_DETAIL: (slug: string) => `/categories/${slug}`,
+  MY_COURSES: "/my-courses",
+  COURSE_DETAIL: (courseId: string) => `/courses/${courseId}`,
+  QUIZ: "/quiz",
+  QUIZ_TOPIC: (topicId: string) => `/quiz/${topicId}`,
+  QUIZ_DETAIL: (topicId: string, quizId: string) => `/quiz/${topicId}/${quizId}`,
+  QUIZ_ATTEMPT: (topicId: string, quizId: string) =>
+    `/quiz/${topicId}/${quizId}/attempt`,
+  QUIZ_RESULT: (topicId: string, quizId: string, attemptId: string) =>
+    `/quiz/${topicId}/${quizId}/result/${attemptId}`,
+  QUIZ_REVIEW: (topicId: string, quizId: string, attemptId: string) =>
+    `/quiz/${topicId}/${quizId}/review/${attemptId}`,
+  QUIZ_HISTORY: "/quiz/history",
+  COURSE_LEARN: (courseId: string) => `/courses/${courseId}/learn`,
+  COURSE_LEARN_LESSON: (courseId: string, lessonId: string) =>
+    `/courses/${courseId}/learn/${lessonId}`,
+  ADMIN: "/admin/dashboard",
+  ADMIN_COURSES: "/admin/courses",
+  ADMIN_COURSE_EDIT: (id: string) => `/admin/courses/${id}/edit`,
+  ADMIN_COURSE_NEW: "/admin/courses/new",
+  /** @deprecated Use COURSE_DETAIL — student marketing detail, not admin */
+  ADMIN_COURSE_DETAIL: (courseId: string) => `/courses/${courseId}`,
+  ADMIN_CATEGORIES: "/admin/categories",
+  ADMIN_LESSONS: "/admin/lessons",
+  ADMIN_ENROLLMENTS: "/admin/enrollments",
+  ADMIN_USER_STUDENT: "/admin/users/student",
+  ADMIN_USER_IMPORT: "/admin/users/import",
+  ADMIN_QUIZ_TOPICS: "/admin/quiz/topics",
+  ADMIN_QUIZ_QUIZZES: "/admin/quiz/quizzes",
+  ADMIN_QUIZ_QUESTIONS: (quizId: string) => `/admin/quiz/quizzes/${quizId}/questions`,
+  ADMIN_QUIZ_PREVIEW: (quizId: string) => `/admin/quiz/quizzes/${quizId}/preview`,
+} as const;

@@ -1,0 +1,33 @@
+stages:
+  - deploy
+
+variables:
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+default:
+  tags:
+    - itis-lms
+
+.verify_and_deploy_rules: &verify_and_deploy_rules
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+deploy:
+  stage: deploy
+  <<: *verify_and_deploy_rules
+  script:
+    - cd "$FOLDER"
+    - git pull origin main
+    # Host swap (idempotent) — prevents OOM when Swap was 0K
+    - |
+      if [ "$(id -u)" -eq 0 ] || command -v sudo >/dev/null 2>&1; then
+        sudo bash scripts/setup-host-swap.sh || bash scripts/setup-host-swap.sh || true
+      fi
+    - docker compose -f docker-compose.prod.yml build --pull=false app
+    - docker compose -f docker-compose.prod.yml up -d --remove-orphans
+    - docker image prune -f
+    - docker builder prune -f
+  environment:
+    name: production

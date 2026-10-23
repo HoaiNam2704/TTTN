@@ -1,0 +1,1111 @@
+databaseChangeLog:
+  - changeSet:
+      id: init-01-create-users
+      author: system
+      comment: Users — authentication & authorization
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dob
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone_number
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: student_id
+                  type: varchar(20)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: student_class
+                  type: varchar(50)
+              - column:
+                  name: student_major
+                  type: varchar(100)
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - createIndex:
+            indexName: idx_users_username
+            tableName: users
+            columns:
+              - column:
+                  name: username
+        - createIndex:
+            indexName: idx_users_email
+            tableName: users
+            columns:
+              - column:
+                  name: email
+        - createIndex:
+            indexName: idx_users_role
+            tableName: users
+            columns:
+              - column:
+                  name: role
+        - createIndex:
+            indexName: idx_users_student_id
+            tableName: users
+            columns:
+              - column:
+                  name: student_id
+        - sql:
+            sql: CREATE UNIQUE INDEX idx_users_username_active ON users (username) WHERE deleted_at IS NULL
+        - sql:
+            sql: CREATE UNIQUE INDEX idx_users_email_active ON users (email) WHERE deleted_at IS NULL
+        - sql:
+            sql: CREATE UNIQUE INDEX idx_users_student_id_active ON users (student_id) WHERE deleted_at IS NULL AND student_id IS NOT NULL
+        - sql:
+            sql: CREATE INDEX idx_users_student_class_active ON users (student_class) WHERE deleted_at IS NULL AND student_class IS NOT NULL
+        - sql:
+            sql: CREATE INDEX idx_users_student_major_active ON users (student_major) WHERE deleted_at IS NULL AND student_major IS NOT NULL
+        - sql:
+            sql: CREATE INDEX idx_users_student_id_class_major_active ON users (student_id, student_class, student_major) WHERE deleted_at IS NULL AND student_id IS NOT NULL AND student_class IS NOT NULL AND student_major IS NOT NULL
+
+  - changeSet:
+      id: init-02-create-refresh-tokens
+      author: system
+      comment: Refresh tokens — multi-device session support
+      changes:
+        - createTable:
+            tableName: refresh_tokens
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: token_hash
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: device_label
+                  type: varchar(100)
+              - column:
+                  name: expires_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - addForeignKeyConstraint:
+            baseTableName: refresh_tokens
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_refresh_tokens_user_id
+        - createIndex:
+            indexName: idx_refresh_tokens_user_id
+            tableName: refresh_tokens
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            indexName: idx_refresh_tokens_token_hash
+            tableName: refresh_tokens
+            columns:
+              - column:
+                  name: token_hash
+        - createIndex:
+            indexName: idx_refresh_tokens_expires_at
+            tableName: refresh_tokens
+            columns:
+              - column:
+                  name: expires_at
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_refresh_tokens_hash_active ON refresh_tokens (token_hash) WHERE deleted_at IS NULL
+
+  - changeSet:
+      id: init-03-create-categories
+      author: system
+      comment: Categories — course classification (3NF)
+      changes:
+        - createTable:
+            tableName: categories
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slug
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - createIndex:
+            indexName: idx_categories_slug
+            tableName: categories
+            columns:
+              - column:
+                  name: slug
+        - createIndex:
+            indexName: idx_categories_name
+            tableName: categories
+            columns:
+              - column:
+                  name: name
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_categories_slug_active ON categories (slug) WHERE deleted_at IS NULL
+
+  - changeSet:
+      id: init-04-create-courses
+      author: system
+      comment: Courses — instructor-owned learning programs
+      changes:
+        - createTable:
+            tableName: courses
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slug
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: category_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: level
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: decimal(12,2)
+              - column:
+                  name: thumbnail_url
+                  type: varchar(500)
+              - column:
+                  name: average_rating
+                  type: NUMERIC(3,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: review_count
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - addForeignKeyConstraint:
+            baseTableName: courses
+            baseColumnNames: category_id
+            referencedTableName: categories
+            referencedColumnNames: id
+            constraintName: fk_courses_category_id
+        - createIndex:
+            indexName: idx_courses_slug
+            tableName: courses
+            columns:
+              - column:
+                  name: slug
+        - createIndex:
+            indexName: idx_courses_category_id
+            tableName: courses
+            columns:
+              - column:
+                  name: category_id
+        - createIndex:
+            indexName: idx_courses_status
+            tableName: courses
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            indexName: idx_courses_level
+            tableName: courses
+            columns:
+              - column:
+                  name: level
+        - createIndex:
+            indexName: idx_courses_average_rating
+            tableName: courses
+            columns:
+              - column:
+                  name: average_rating
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_courses_slug_active ON courses (slug) WHERE deleted_at IS NULL
+
+  - changeSet:
+      id: init-05-create-sections
+      author: system
+      comment: Sections — chapters/modules within a course
+      changes:
+        - createTable:
+            tableName: sections
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: course_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: sort_order
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - addForeignKeyConstraint:
+            baseTableName: sections
+            baseColumnNames: course_id
+            referencedTableName: courses
+            referencedColumnNames: id
+            constraintName: fk_sections_course_id
+        - createIndex:
+            indexName: idx_sections_course_id
+            tableName: sections
+            columns:
+              - column:
+                  name: course_id
+        - createIndex:
+            indexName: idx_sections_course_sort_order
+            tableName: sections
+            columns:
+              - column:
+                  name: course_id
+              - column:
+                  name: sort_order
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_sections_course_sort_active ON sections (course_id, sort_order) WHERE deleted_at IS NULL
+
+  - changeSet:
+      id: init-06-create-lessons
+      author: system
+      comment: "Lessons — video lectures within a section (N lessons : 1 section : 1 course)"
+      changes:
+        - createTable:
+            tableName: lessons
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: section_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: video_storage_key
+                  type: varchar(500)
+              - column:
+                  name: subtitle_storage_key
+                  type: varchar(500)
+              - column:
+                  name: video_status
+                  type: varchar(32)
+                  defaultValue: PROCESSING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: hls_playlist_key
+                  type: varchar(500)
+              - column:
+                  name: duration_seconds
+                  type: int
+              - column:
+                  name: sort_order
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_preview
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - addForeignKeyConstraint:
+            baseTableName: lessons
+            baseColumnNames: section_id
+            referencedTableName: sections
+            referencedColumnNames: id
+            constraintName: fk_lessons_section_id
+        - createIndex:
+            indexName: idx_lessons_section_id
+            tableName: lessons
+            columns:
+              - column:
+                  name: section_id
+        - createIndex:
+            indexName: idx_lessons_section_sort_order
+            tableName: lessons
+            columns:
+              - column:
+                  name: section_id
+              - column:
+                  name: sort_order
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_lessons_section_sort_active ON lessons (section_id, sort_order) WHERE deleted_at IS NULL
+
+  - changeSet:
+      id: init-07-create-enrollments
+      author: system
+      comment: Enrollments — user registers for a course
+      changes:
+        - createTable:
+            tableName: enrollments
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: course_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: progress_percent
+                  type: double precision
+                  defaultValueNumeric: 0.0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - addForeignKeyConstraint:
+            baseTableName: enrollments
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_enrollments_user_id
+        - addForeignKeyConstraint:
+            baseTableName: enrollments
+            baseColumnNames: course_id
+            referencedTableName: courses
+            referencedColumnNames: id
+            constraintName: fk_enrollments_course_id
+        - createIndex:
+            indexName: idx_enrollments_user_id
+            tableName: enrollments
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            indexName: idx_enrollments_course_id
+            tableName: enrollments
+            columns:
+              - column:
+                  name: course_id
+        - createIndex:
+            indexName: idx_enrollments_user_course
+            tableName: enrollments
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: course_id
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_enrollments_user_course_active ON enrollments (user_id, course_id) WHERE deleted_at IS NULL
+
+  - changeSet:
+      id: init-08-create-lesson-progress
+      author: system
+      comment: "Lesson progress — ghi nhận bài học đã xem xong (một dòng = hoàn thành)"
+      changes:
+        - createTable:
+            tableName: lesson_progress
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: enrollment_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lesson_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - addForeignKeyConstraint:
+            baseTableName: lesson_progress
+            baseColumnNames: enrollment_id
+            referencedTableName: enrollments
+            referencedColumnNames: id
+            constraintName: fk_lesson_progress_enrollment_id
+        - addForeignKeyConstraint:
+            baseTableName: lesson_progress
+            baseColumnNames: lesson_id
+            referencedTableName: lessons
+            referencedColumnNames: id
+            constraintName: fk_lesson_progress_lesson_id
+        - createIndex:
+            indexName: idx_lesson_progress_enrollment_id
+            tableName: lesson_progress
+            columns:
+              - column:
+                  name: enrollment_id
+        - createIndex:
+            indexName: idx_lesson_progress_lesson_id
+            tableName: lesson_progress
+            columns:
+              - column:
+                  name: lesson_id
+        - createIndex:
+            indexName: idx_lesson_progress_enrollment_lesson
+            tableName: lesson_progress
+            columns:
+              - column:
+                  name: enrollment_id
+              - column:
+                  name: lesson_id
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_lesson_progress_enrollment_lesson_active ON lesson_progress (enrollment_id, lesson_id) WHERE deleted_at IS NULL
+
+  - changeSet:
+      id: init-09-create-reviews
+      author: system
+      comment: Reviews — enrolled users leave a star rating and/or comment on a course
+      changes:
+        - createTable:
+            tableName: reviews
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: course_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rating
+                  type: smallint
+              - column:
+                  name: comment
+                  type: text
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: timestamptz
+        - addForeignKeyConstraint:
+            baseTableName: reviews
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_reviews_user_id
+        - addForeignKeyConstraint:
+            baseTableName: reviews
+            baseColumnNames: course_id
+            referencedTableName: courses
+            referencedColumnNames: id
+            constraintName: fk_reviews_course_id
+        - sql:
+            sql: ALTER TABLE reviews ADD CONSTRAINT ck_reviews_rating_range CHECK (rating IS NULL OR (rating BETWEEN 1 AND 5))
+        - sql:
+            sql: ALTER TABLE reviews ADD CONSTRAINT ck_reviews_star_or_comment CHECK (rating IS NOT NULL OR (comment IS NOT NULL AND length(btrim(comment)) > 0))
+        - createIndex:
+            indexName: idx_reviews_course_id
+            tableName: reviews
+            columns:
+              - column:
+                  name: course_id
+        - createIndex:
+            indexName: idx_reviews_user_id
+            tableName: reviews
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            indexName: idx_reviews_rating
+            tableName: reviews
+            columns:
+              - column:
+                  name: rating
+        - createIndex:
+            indexName: idx_reviews_created_at
+            tableName: reviews
+            columns:
+              - column:
+                  name: created_at
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_reviews_user_course_active ON reviews (user_id, course_id) WHERE deleted_at IS NULL
+
+  - changeSet:
+      id: init-10-create-quiz-topics
+      author: system
+      comment: Quiz topics
+      changes:
+        - createTable:
+            tableName: quiz_topics
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - createIndex:
+            tableName: quiz_topics
+            indexName: idx_quiz_topics_name
+            columns:
+              - column:
+                  name: name
+
+  - changeSet:
+      id: init-11-create-quizzes
+      author: system
+      comment: Quizzes
+      changes:
+        - createTable:
+            tableName: quizzes
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: topic_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: duration
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passing_score
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_published
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - createIndex:
+            tableName: quizzes
+            indexName: idx_quizzes_topic_id
+            columns:
+              - column:
+                  name: topic_id
+        - createIndex:
+            tableName: quizzes
+            indexName: idx_quizzes_is_published
+            columns:
+              - column:
+                  name: is_published
+        - addForeignKeyConstraint:
+            baseTableName: quizzes
+            baseColumnNames: topic_id
+            referencedTableName: quiz_topics
+            referencedColumnNames: id
+            constraintName: fk_quizzes_topic_id
+            onDelete: RESTRICT
+
+  - changeSet:
+      id: init-12-create-quiz-questions
+      author: system
+      comment: Quiz questions
+      changes:
+        - createTable:
+            tableName: quiz_questions
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: quiz_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: explanation
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - createIndex:
+            tableName: quiz_questions
+            indexName: idx_quiz_questions_quiz_id
+            columns:
+              - column:
+                  name: quiz_id
+        - addForeignKeyConstraint:
+            baseTableName: quiz_questions
+            baseColumnNames: quiz_id
+            referencedTableName: quizzes
+            referencedColumnNames: id
+            constraintName: fk_quiz_questions_quiz_id
+            onDelete: RESTRICT
+
+  - changeSet:
+      id: init-13-create-quiz-options
+      author: system
+      comment: Quiz options
+      changes:
+        - createTable:
+            tableName: quiz_options
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: question_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_correct
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - createIndex:
+            tableName: quiz_options
+            indexName: idx_quiz_options_question_id
+            columns:
+              - column:
+                  name: question_id
+        - addForeignKeyConstraint:
+            baseTableName: quiz_options
+            baseColumnNames: question_id
+            referencedTableName: quiz_questions
+            referencedColumnNames: id
+            constraintName: fk_quiz_options_question_id
+            onDelete: RESTRICT
+
+  - changeSet:
+      id: init-14-create-quiz-attempts
+      author: system
+      comment: Quiz attempts
+      changes:
+        - createTable:
+            tableName: quiz_attempts
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quiz_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: submitted_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: elapsed_seconds
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_questions
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_points
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: correct_count
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: incorrect_count
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: score_points
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: score_percent
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passed
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: answers_json
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: questions_json
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - createIndex:
+            tableName: quiz_attempts
+            indexName: idx_quiz_attempts_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: quiz_attempts
+            indexName: idx_quiz_attempts_quiz_id
+            columns:
+              - column:
+                  name: quiz_id
+        - createIndex:
+            tableName: quiz_attempts
+            indexName: idx_quiz_attempts_submitted_at
+            columns:
+              - column:
+                  name: submitted_at
+        - addForeignKeyConstraint:
+            baseTableName: quiz_attempts
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_quiz_attempts_user_id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: quiz_attempts
+            baseColumnNames: quiz_id
+            referencedTableName: quizzes
+            referencedColumnNames: id
+            constraintName: fk_quiz_attempts_quiz_id
+            onDelete: RESTRICT
+
+  - changeSet:
+      id: init-15-tag-schema
+      author: system
+      comment: Tag init database schema
+      changes:
+        - tagDatabase:
+            tag: init_database

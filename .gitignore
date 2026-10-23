@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+**/node_modules/
+**/.next/
+**/target/
+**/*.tsbuildinfo
+logs/
+.runtime/
+.idea/
+.vscode/
+*.log
